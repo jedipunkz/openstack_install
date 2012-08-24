@@ -39,8 +39,19 @@ Structure
     |   CPE    |
     +----------+
 
+Installation
+------------
+
+    % sudo -i
+    # git clone git://github.com/jedipunkz/openstack_install.git
+    # chmod +x openstack_install/openstack_install.sh
+    # ./openstak_install/openstack_install.sh
+    ( wait some minutes...)
+
 Additional Operation
 --------------------
+
+After installation, you have to add OS Image to glance for building VMs. Here, I show you operation that you have to.
 
 #### create OS images
 
