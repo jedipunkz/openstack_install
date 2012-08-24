@@ -37,7 +37,7 @@ set -ex
 # -----------------------------------------------------------------
 HOST_IP='10.200.8.15'
 HOST_MASK='255.255.255.0'
-HOST_NETWROK='10.200.8.0'
+HOST_NETWORK='10.200.8.0'
 HOST_BROADCAST='10.200.8.255'
 GATEWAY='10.200.8.1'
 MYSQL_PASS='secret'
