@@ -17,7 +17,7 @@ Node that you want to use for installation must have these environment.
 
 * Ubuntu Server 12.04 LTS amd64
 * Intel-VT or AMD-V machine
-* 1 NIC or more NICs
+* 1 NIC or more NICs, it doesn't matter. :)
 
 Structure
 ---------
@@ -29,7 +29,7 @@ Structure
     |          | | br100  | 192.168.4.33/27 -> floating range : 10.200.8.32/27
     |          | +--------+
     |          | | eth0:0 | 192.168.3.1       disk devices
-    |   Host   | +--------+            +------------------------+
+    |   Host   | +--------+   (dummy)  +------------------------+
     |          |                       | /dev/sda6 nova-volumes |
     |          | +--------+            +------------------------+
     |          | |  eth0  | ${HOST_IP} | /dev/sda7 swift        |
