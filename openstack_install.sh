@@ -1,17 +1,22 @@
 #!/bin/sh
 #
-# @jedipunkz @kanetann 24th Aug 2012
+# @jedipunkz 24th Aug 2012
 # 
 # Overview
 # --------
+#
 # OpenStack All In One Instrallation Script. These compornents of OpenStack will be
-# installed on 1 node. nova, glance, keystone, swift.
+# installed on only 1 node. nova, glance, keystone, swift.
 #
 # Precondition
 # ------------
+#
 # * Ubuntu Server 12.04 LTS amd64
 # * Intel-VT or AMD-V machine
-# * 1 NIC or more NICs
+# * 1 NIC or more NICs, it does not matter.
+#
+# Structure
+# ---------
 #
 # +--+--+--+
 # |VM|VM|VM|  192.168.4.32/27
@@ -19,13 +24,13 @@
 # +----------+ +--------+
 # |          | | br100  | 192.168.4.33/27 -> floating range : 10.200.8.32/27
 # |          | +--------+
-# |          | | eth0:0 | 192.168.3.1
-# |   Host   | +--------+
-# |          |
-# |          | +--------+
-# |          | |  eth0  | ${HOST_IP}
-# +----------+ +--------+
-# |
+# |          | | eth0:0 | 192.168.3.1       disk devices
+# |   Host   | +--------+            +------------------------+
+# |          |                       | /dev/sda6 nova-volumes |
+# |          | +--------+            +------------------------+
+# |          | |  eth0  | ${HOST_IP} | /dev/sda7 swift        |
+# +----------+ +--------+            +------------------------+
+# |              nw I/Fs
 # +----------+
 # |   CPE    |
 # +----------+
@@ -45,6 +50,8 @@ FIXED_RANGE='192.168.4.1/27'
 FLOATING_RANGE='10.200.8.32/27'
 FLAT_NETWORK_DHCP_START='192.168.4.33'
 ISCSI_IP_PREFIX='192.168.4'
+NOVA_VOLUMES_DEV='/dev/sda6'
+SWIFT_DEV='/dev/sda7'
 
 # -----------------------------------------------------------------
 # Setup shell environment
@@ -321,8 +328,8 @@ nova_setup() {
 --verbose
 EOF
 
-    sudo pvcreate /dev/sda6
-    sudo vgcreate nova-volumes /dev/sda6
+    sudo pvcreate ${NOVA_VOLUMES_DEV}
+    sudo vgcreate nova-volumes ${NOVA_VOLUMES_DEV}
     sudo chown -R nova:nova /etc/nova
     sudo chmod 644 /etc/nova/nova.conf
 
@@ -355,12 +362,12 @@ swift_setup() {
     sudo apt-get -y install xfsprogs curl python-pastedeploy
 
     sudo fdisk -l
-    sudo mkfs.xfs -i size=1024 /dev/sda7 -f
+    sudo mkfs.xfs -i size=1024 ${SWIFT_DEV} -f
 
     sudo mkdir /mnt/swift_backend
 
     sudo cat <<EOF >>/etc/fstab
-/dev/sda7 /mnt/swift_backend xfs noatime,nodiratime,nobarrier,logbufs=8 0 0
+${SWIFT_DEV} /mnt/swift_backend xfs noatime,nodiratime,nobarrier,logbufs=8 0 0
 EOF
 
     sudo mount /mnt/swift_backend
