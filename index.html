@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Openstack install by jedipunkz</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Openstack install</h1>
+          <h2>All in one installation script for OpenStack</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/jedipunkz/openstack_install/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/jedipunkz/openstack_install/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/jedipunkz/openstack_install" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h1>openstack_install</h1>
+
+<p>All in one installation script for OpenStack</p>
+
+<p>24th Aug 2012 <a href="https://github.com/jedipunkz" class="user-mention">@jedipunkz</a></p>
+
+<h2>Overview</h2>
+
+<p>OpenStack All In One Instrallation Script. These compornents of OpenStack will be
+installed on only 1 node. nova, glance, keystone, swift.</p>
+
+<h2>Precondition</h2>
+
+<p>Node that you want to use for installation must have these environment.</p>
+
+<ul>
+<li>Ubuntu Server 12.04 LTS amd64</li>
+<li>Intel-VT or AMD-V machine</li>
+<li>1 NIC or more NICs, it doesn't matter. :)</li>
+</ul><h2>Structure</h2>
+
+<pre><code>+--+--+--+
+|VM|VM|VM|  192.168.4.32/27
++--+--+--+..
++----------+ +--------+
+|          | | br100  | 192.168.4.33/27 -&gt; floating range : 10.200.8.32/27
+|          | +--------+
+|          | | eth0:0 | 192.168.3.1       disk devices
+|   Host   | +--------+   (dummy)  +------------------------+
+|          |                       | /dev/sda6 nova-volumes |
+|          | +--------+            +------------------------+
+|          | |  eth0  | ${HOST_IP} | /dev/sda7 swift        |
++----------+ +--------+            +------------------------+
+|              nw I/Fs
++----------+
+|   CPE    |
++----------+
+</code></pre>
+
+<h2>Installation</h2>
+
+<pre><code>% sudo -i
+# git clone git://github.com/jedipunkz/openstack_install.git
+# chmod +x openstack_install/openstack_install.sh
+# ./openstak_install/openstack_install.sh
+( wait some minutes...)
+</code></pre>
+
+<h2>Additional Operation</h2>
+
+<p>After installation, you have to add OS Image to glance for building VMs. Here, I show you operation that you have to.</p>
+
+<h4>create OS images</h4>
+
+<p>Create a OS Image on this node. for example I show you that operation for
+ubuntu server 12.04 LTS image.</p>
+
+<pre><code># kvm-image create -f qcow2 server.img 5G
+# wget http://gb.releases.ubuntu.com//precise/ubuntu-12.04-server-amd64.iso
+# kvm -m 256 -cdrom ubuntu-12.04-server-amd64.iso -drive file=server.img,if=virtio,index=0 -boot d -net nic -net user -nographic -vnc :0
+</code></pre>
+
+<p>Connect VNC to ${node_IP}:0, and install OS on VNC Tool. When you finish
+installation operation, re-run kvm command to boot from hard disk.</p>
+
+<pre><code># kvm -m 256 -drive file=server.img,if=virtio,index=0 -boot c -net nic -net user -nographic -vnc :0
+</code></pre>
+
+<p>Re-connect VNC to ${node_IP}:0, and execute this command.</p>
+
+<pre><code># sudo rm -rf /etc/udev/rules.d/70-persistent-net.rules
+# shutdown -h now
+</code></pre>
+
+<h4>add OS image to glance</h4>
+
+<p>Add server.img to glance for OS image template on OpenStack.</p>
+
+<pre><code># source ~/.openstack # if you use bash, exec this command ". ~/.openstack"
+# glance add name="Ubuntu Server 12.04LTS" is_public=true container_format=ovf disk_format=qcow2 &lt; server.img
+</code></pre>
+
+<h4>Create ssh keypair and install that</h4>
+
+<p>Create SSH-Keypair and install that to OpenStack Nova.</p>
+
+<pre><code># ssh-keygen
+# nova keypair-add --pub_key .ssh/id_rsa.pub mykey
+# nova keypair-list
+</code></pre>
+
+<h4>Open Dashboard : Horizon</h4>
+
+<p>Operation was done. Open http://${node_IP} to use Horizon (OpenStack
+Dashboard) and create some VMs.</p>
+
+<p><a href="http://docs.openstack.org/essex/openstack-compute/starter/os-compute-starterguide-trunk.pdf">http://docs.openstack.org/essex/openstack-compute/starter/os-compute-starterguide-trunk.pdf</a></p>
+        </section>
+
+        <footer>
+          Openstack install is maintained by <a href="https://github.com/jedipunkz">jedipunkz</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="http://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
+    </div>
+  </body>
+</html>
