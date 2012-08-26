@@ -76,6 +76,7 @@ Re-connect VNC to ${node_IP}:0, and execute this command.
 
 Add server.img to glance for OS image template on OpenStack.
 
+    # source ~/.openstack # if you use bash, exec this command ". ~/.openstack"
     # glance add name="Ubuntu Server 12.04LTS" is_public=true container_format=ovf disk_format=qcow2 < server.img
 
 #### Create ssh keypair and install that

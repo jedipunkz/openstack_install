@@ -57,17 +57,17 @@ SWIFT_DEV='/dev/sda7'
 # Setup shell environment
 # -----------------------------------------------------------------
 shell_env() {
-    echo 'export SERVICE_ENDPOINT="http://localhost:35357/v2.0"' >> ~/.zshrc
-    echo 'export SERVICE_TOKEN=admin' >> ~/.zshrc
+    echo 'export SERVICE_ENDPOINT="http://localhost:35357/v2.0"' >> ~/.openstack
+    echo 'export SERVICE_TOKEN=admin' >> ~/.openstack
     export SERVICE_ENDPOINT="http://localhost:35357/v2.0"
     export SERVICE_TOKEN=admin
 
-    echo 'export SERVICE_TOKEN=admin' >> ~/.zshrc
-    echo 'export OS_TENANT_NAME=admin' >> ~/.zshrc
-    echo 'export OS_USERNAME=admin' >> ~/.zshrc
-    echo 'export OS_PASSWORD=admin' >> ~/.zshrc
-    echo 'export OS_AUTH_URL="http://localhost:5000/v2.0/"' >> ~/.zshrc
-    echo 'export SERVICE_ENDPOINT=http://localhost:35357/v2.0' >> ~/.zshrc
+    echo 'export SERVICE_TOKEN=admin' >> ~/.openstack
+    echo 'export OS_TENANT_NAME=admin' >> ~/.openstack
+    echo 'export OS_USERNAME=admin' >> ~/.openstack
+    echo 'export OS_PASSWORD=admin' >> ~/.openstack
+    echo 'export OS_AUTH_URL="http://localhost:5000/v2.0/"' >> ~/.openstack
+    echo 'export SERVICE_ENDPOINT=http://localhost:35357/v2.0' >> ~/.openstack
     export SERVICE_TOKEN=admin
     export OS_TENANT_NAME=admin
     export OS_USERNAME=admin
