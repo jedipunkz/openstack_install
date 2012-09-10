@@ -40,34 +40,45 @@ set -ex
 # -----------------------------------------------------------------
 # Environment Parameter
 # -----------------------------------------------------------------
-HOST_IP='10.200.8.15'
-HOST_MASK='255.255.255.0'
-HOST_NETWORK='10.200.8.0'
-HOST_BROADCAST='10.200.8.255'
-GATEWAY='10.200.8.1'
+# if you install all in one, set this env.
+HOST_IP='10.200.4.139'
+# if you install on separated nodes, set this env.
+NOVA_IP='10.200.4.124'
+SWIFT_IP='10.200.4.133'
+GLANCE_IP='10.200.4.123'
+KEYSTONE_IP='10.200.4.139'
+DB_IP='10.200.4.139'
+# common env.
+NOVA_MASK='255.255.255.0'
+NOVA_NETWORK='10.200.4.0'
+NOVA_BROADCAST='10.200.4.255'
+NOVA_GATEWAY='10.200.4.1'
 MYSQL_PASS='secret'
 FIXED_RANGE='192.168.4.1/27'
-FLOATING_RANGE='10.200.8.32/27'
+FLOATING_RANGE='10.200.4.32/27'
 FLAT_NETWORK_DHCP_START='192.168.4.33'
 ISCSI_IP_PREFIX='192.168.4'
 NOVA_VOLUMES_DEV='/dev/sda6'
 SWIFT_DEV='/dev/sda7'
 
+# initialize
+sudo apt-get update
+
 # -----------------------------------------------------------------
 # Setup shell environment
 # -----------------------------------------------------------------
 shell_env() {
-    echo 'export SERVICE_ENDPOINT="http://localhost:35357/v2.0"' >> ~/.openstack
+    echo "export SERVICE_ENDPOINT=\"http://${KEYSTONE_IP}:35357/v2.0\"" >> ~/.openstack
     echo 'export SERVICE_TOKEN=admin' >> ~/.openstack
-    export SERVICE_ENDPOINT="http://localhost:35357/v2.0"
+    export SERVICE_ENDPOINT="http://${KEYSTONE_IP}:35357/v2.0"
     export SERVICE_TOKEN=admin
 
     echo 'export SERVICE_TOKEN=admin' >> ~/.openstack
     echo 'export OS_TENANT_NAME=admin' >> ~/.openstack
     echo 'export OS_USERNAME=admin' >> ~/.openstack
     echo 'export OS_PASSWORD=admin' >> ~/.openstack
-    echo 'export OS_AUTH_URL="http://localhost:5000/v2.0/"' >> ~/.openstack
-    echo 'export SERVICE_ENDPOINT=http://localhost:35357/v2.0' >> ~/.openstack
+    echo "export OS_AUTH_URL=\"http://${KEYSTONE_IP}:5000/v2.0/\"" >> ~/.openstack
+    echo "export SERVICE_ENDPOINT=http://${KEYSTONE_IP}:35357/v2.0" >> ~/.openstack
     export SERVICE_TOKEN=admin
     export OS_TENANT_NAME=admin
     export OS_USERNAME=admin
@@ -79,7 +90,6 @@ shell_env() {
 # Network Configuration
 # -----------------------------------------------------------------
 network_setup() {
-    sudo apt-get update
     sudo apt-get -y install bridge-utils
 
     # Network Configuration
@@ -91,11 +101,11 @@ iface lo inet loopback
 # The primary network interface
 auto eth0
 iface eth0 inet static
-    address ${HOST_IP} 
-    netmask ${HOST_MASK}
-    network ${HOST_NETWORK}
-    broadcast ${HOST_BROADCAST}
-    gateway ${GATEWAY}
+    address ${NOVA_IP} 
+    netmask ${NOVA_MASK}
+    network ${NOVA_NETWORK}
+    broadcast ${NOVA_BROADCAST}
+    gateway ${NOVA_GATEWAY}
     # dns-* options are implemented by the resolvconf package, if installed
     dns-nameservers 8.8.8.8
     dns-search example.jp
@@ -155,7 +165,7 @@ database_setup() {
 keystone_setup() {
     sudo apt-get -y install keystone python-keystone python-keystoneclient
     sudo sed -i -e 's/admin_token = ADMIN/admin_token = admin/' /etc/keystone/keystone.conf
-    sudo sed -i -e "s#sqlite:////var/lib/keystone/keystone.db#mysql://keystonedbadmin:keystonesecret@${HOST_IP}/keystone#" /etc/keystone/keystone.conf
+    sudo sed -i -e "s#sqlite:////var/lib/keystone/keystone.db#mysql://keystonedbadmin:keystonesecret@${KEYSTONE_IP}/keystone#" /etc/keystone/keystone.conf
 
     sudo service keystone restart
     sudo keystone-manage db_sync
@@ -222,19 +232,20 @@ keystone_setup() {
     SERVICE_LIST_ID_COMPUTE=`mysql -u root -p${MYSQL_PASS} keystone -e "select id from service where type='compute'" --skip-column-name --silent`
 
     # Creating Endpoints
-    keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_COMPUTE --publicurl "http://${HOST_IP}:8774/v2/\$(tenant_id)s" --adminurl "http://${HOST_IP}:8774/v2/\$(tenant_id)s" --internalurl "http://${HOST_IP}:8774/v2/\$(tenant_id)s"
-    keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_VOLUME --publicurl "http://${HOST_IP}:8776/v1/\$(tenant_id)s" --adminurl "http://${HOST_IP}:8776/v1/\$(tenant_id)s" --internalurl "http://${HOST_IP}:8776/v1/\$(tenant_id)s"
-    keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_IMAGE --publicurl "http://${HOST_IP}:9292/v1" --adminurl "http://${HOST_IP}:9292/v1" --internalurl "http://${HOST_IP}:9292/v1"
-    keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_OBJECT_STORE --publicurl "http://${HOST_IP}:8080/v1/AUTH_\$(tenant_id)s" --adminurl "http://${HOST_IP}:8080/v1" --internalurl "http://${HOST_IP}:8080/v1/AUTH_\$(tenant_id)s"
-    keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_IDENTITY --publicurl "http://${HOST_IP}:5000/v2.0" --adminurl "http://${HOST_IP}:35357/v2.0" --internalurl "http://${HOST_IP}:5000/v2.0"
-    keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_EC2 --publicurl "http://${HOST_IP}:8773/services/Cloud" --adminurl "http://${HOST_IP}:8773/services/Admin" --internalurl "http://${HOST_IP}:8773/services/Cloud"
+    keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_COMPUTE --publicurl "http://${NOVA_IP}:8774/v2/\$(tenant_id)s" --adminurl "http://${NOVA_IP}:8774/v2/\$(tenant_id)s" --internalurl "http://${NOVA_IP}:8774/v2/\$(tenant_id)s"
+    keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_VOLUME --publicurl "http://${NOVA_IP}:8776/v1/\$(tenant_id)s" --adminurl "http://${NOVA_IP}:8776/v1/\$(tenant_id)s" --internalurl "http://${NOVA_IP}:8776/v1/\$(tenant_id)s"
+    keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_IMAGE --publicurl "http://${GLANCE_IP}:9292/v1" --adminurl "http://${GLANCE_IP}:9292/v1" --internalurl "http://${GLANCE_IP}:9292/v1"
+    keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_OBJECT_STORE --publicurl "http://${SWIFT_IP}:8089/v1/AUTH_\$(tenant_id)s" --adminurl "http://${SWIFT_IP}:8089/v1" --internalurl "http://${SWIFT_IP}:8089/v1/AUTH_\$(tenant_id)s"
+    keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_IDENTITY --publicurl "http://${KEYSTONE_IP}:5000/v2.0" --adminurl "http://${KEYSTONE_IP}:35357/v2.0" --internalurl "http://${KEYSTONE_IP}:5000/v2.0"
+    keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_EC2 --publicurl "http://${NOVA_IP}:8773/services/Cloud" --adminurl "http://${NOVA_IP}:8773/services/Admin" --internalurl "http://${NOVA_IP}:8773/services/Cloud"
 }
 
 # -----------------------------------------------------------------
 # Glance
 # -----------------------------------------------------------------
 glance_setup() {
-    sudo apt-get -y install glance glance-api glance-client glance-common glance-registry python-glance
+    #sudo apt-get -y install glance glance-api glance-client glance-common glance-registry python-glance
+    sudo apt-get -y install glance glance-api glance-client glance-common glance-registry python-glance python-mysqldb python-keystone python-keystoneclient mysql-client
 
     # Glance Configuration
     sudo sed -i -e 's/%SERVICE_TENANT_NAME%/service/' /etc/glance/glance-api-paste.ini
@@ -245,25 +256,37 @@ glance_setup() {
     sudo sed -i -e 's/%SERVICE_USER%/glance/' /etc/glance/glance-registry-paste.ini
     sudo sed -i -e 's/%SERVICE_PASSWORD%/glance/' /etc/glance/glance-registry-paste.ini
 
+    sudo sed -i -e "s#sqlite:////var/lib/glance/glance.sqlite#mysql://glancedbadmin:glancesecret@${DB_IP}/glance#" /etc/glance/glance-registry.conf
+    sudo cat <<EOF >>/etc/glance/glance-api.conf
+[paste_deploy]
+flavor = keystone
+EOF
+
     sudo sed -i -e "s#sqlite:////var/lib/glance/glance.sqlite#mysql://glancedbadmin:glancesecret@${HOST_IP}/glance#" /etc/glance/glance-registry.conf
     sudo cat <<EOF >>/etc/glance/glance-registry.conf
 [paste_deploy]
 flavor = keystone
 EOF
 
-    sudo sed -i -e "s#sqlite:////var/lib/glance/glance.sqlite#mysql://glancedbadmin:glancesecret@${HOST_IP}/glance#" /etc/glance/glance-registry.conf
-    sudo cat <<EOF >>/etc/glance/glance-api.conf
-[paste_deploy]
-flavor = keystone
-EOF
+    # if not all in one
+    if [ "$1" != allinone ]; then
+        sudo sed -i -e 's#pipeline = versionnegotiation context apiv1app#pipeline = versionnegotiation context apiv1app authtoken auth-context#' /etc/glance/glance-api-paste.ini
+        sudo sed -i -e "s#service_host = 127.0.0.1#service_host = ${KEYSTONE_IP}#" /etc/glance/glance-api-paste.ini
+        sudo sed -i -e "s#auth_host = 127.0.0.1#auth_host = ${KEYSTONE_IP}#" /etc/glance/glance-api-paste.ini
+        sudo sed -i -e "s#auth_uri = http://127.0.0.1:5000/#auth_uri = http://${KEYSTONE_IP}:5000/#" /etc/glance/glance-api-paste.ini
+        sudo sed -i -e "s#pipeline = context registryapp#pipeline = context registryapp authtoken auth-context#" /etc/glance/glance-registry-paste.ini
+        sudo sed -i -e "s#service_host = 127.0.0.1#service_host = ${KEYSTONE_IP}#" /etc/glance/glance-registry-paste.ini
+        sudo sed -i -e "s#auth_host = 127.0.0.1#auth_host = ${KEYSTONE_IP}#" /etc/glance/glance-registry-paste.ini
+        sudo sed -i -e "s#auth_uri = http://127.0.0.1:5000/#auth_uri = http://${KEYSTONE_IP}:5000/#" /etc/glance/glance-registry-paste.ini
+    fi
+
 
     sudo glance-manage version_control 0
     sudo glance-manage db_sync
 
-    mysql -uroot -p${MYSQL_PASS} -e "GRANT ALL PRIVILEGES ON glance.* TO 'glancedbadmin'@'localhost';"
-    mysql -uroot -p${MYSQL_PASS} -e "SET PASSWORD FOR 'glancedbadmin'@'localhost' = PASSWORD('glancesecret');"
-
-    sudo glance-manage db_sync
+    #mysql -uroot -p${MYSQL_PASS} -e "GRANT ALL PRIVILEGES ON glance.* TO 'glancedbadmin'@'${DB_IP};"
+    #mysql -uroot -p${MYSQL_PASS} -e "SET PASSWORD FOR 'glancedbadmin'@'${DB_IP}' = PASSWORD('glancesecret');"
+    #sudo glance-manage db_sync
 
     sudo restart glance-api
     sudo restart glance-registry
@@ -275,7 +298,7 @@ EOF
 # Nova
 # -----------------------------------------------------------------
 nova_setup() {
-    sudo apt-get -y  install nova-api nova-cert nova-compute nova-compute-kvm nova-doc nova-network nova-objectstore nova-scheduler nova-volume rabbitmq-server novnc nova-consoleauth
+    sudo apt-get -y  install nova-api nova-cert nova-compute nova-compute-kvm nova-doc nova-network nova-objectstore nova-scheduler nova-volume rabbitmq-server novnc nova-consoleauth python-keystone python-keystoneclient
 
     # Nova Configuration
     sudo cp /etc/nova/nova.conf  /etc/nova/nova.conf.org
@@ -337,6 +360,13 @@ EOF
     sudo sed -i -e 's/%SERVICE_USER%/nova/' /etc/nova/api-paste.ini
     sudo sed -i -e 's/%SERVICE_PASSWORD%/nova/' /etc/nova/api-paste.ini
 
+    # if not all in one
+    if [ "$1" = allinone ]; then
+        sudo sed -i -e "s#service_host = 127.0.0.1#service_host = ${KEYSTONE_IP}#" /etc/nova/api-paste.ini
+        sudo sed -i -e "s#auth_host = 127.0.0.1#auth_host = ${KEYSTONE_IP}#" /etc/nova/api-paste.ini
+        sudo sed -i -e "s#auth_uri = http://127.0.0.1:5000#auth_uri = http://${KEYSTONE_IP}:5000#" /etc/nova/api-paste.ini
+    fi
+
     sudo nova-manage db sync
 
     sudo nova-manage network create private --fixed_range_v4=192.168.4.32/27 --num_networks=1 --bridge=br100 --bridge_interface=eth0:0 --network_size=32
@@ -352,6 +382,12 @@ EOF
 horizon_setup() {
     sudo apt-get -y install openstack-dashboard
     sudo service apache2 restart
+
+    # if you do not install all in one.
+    if [ "$1" = allinone ]; then
+        sudo sed -i -e "s#OPENSTACK_HOST = \"127.0.0.1\"#OPENSTACK_HOST = \"${KEYSTONE_IP}\"#" /etc/openstack-dashboard/local_settings.py
+        sudo service apache2 restart
+    fi
 }
 
 # -----------------------------------------------------------------
@@ -667,12 +703,56 @@ EOF
 # -----------------------------------------------------------------
 # Main Function
 # -----------------------------------------------------------------
-shell_env
-network_setup
-database_setup
-keystone_setup
-glance_setup
-nova_setup
-horizon_setup
-swift_setup
+#shell_env
+#network_setup
+#database_setup
+#keystone_setup
+#glance_setup
+#nova_setup
+#horizon_setup
+#swift_setup
+
+# -----------------------------------------------------------------
+# Main Function
+# -----------------------------------------------------------------
+case "$1" in
+    allinone)
+        NOVA_IP=${HOST_IP}
+        SWIFT_IP=${HOST_IP}
+        DB_IP=${HOST_IP}
+        KEYSTONE_IP=${HOST_IP}
+        GLANCE_IP=${HOST_IP}
+        shell_env
+        network_setup
+        database_setup
+        keystone_setup
+        glance_setup
+        nova_setup
+        horizon_setup
+        swift_setup
+        ;;
+    swift)
+        swift_setup
+        ;;
+    keystone)
+        database_setup
+        keystone_setup
+        ;;
+    glance)
+        glance_setup
+        ;;
+    nova)
+        network_setup
+        nova_setup
+        ;;
+    horizon)
+        horizon_setup
+        ;;
+    *)
+        echo $"Usage : $0 {allinone|swift}"
+        exit 1
+        ;;
+esac
+
+exit 0
 

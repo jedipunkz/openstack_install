@@ -45,7 +45,7 @@ Installation
     % sudo -i
     # git clone git://github.com/jedipunkz/openstack_install.git
     # chmod +x openstack_install/openstack_install.sh
-    # ./openstak_install/openstack_install.sh
+    # ./openstak_install/openstack_install.sh allinone
     ( wait some minutes...)
 
 Additional Operation
