@@ -749,7 +749,7 @@ case "$1" in
         horizon_setup
         ;;
     *)
-        echo $"Usage : $0 {allinone|swift}"
+        echo $"Usage : $0 {allinone|swift|keystone|glance|nova|horizon}"
         exit 1
         ;;
 esac
