@@ -58,7 +58,7 @@ FIXED_RANGE='192.168.4.1/27'
 FLOATING_RANGE='10.200.4.32/27'
 FLAT_NETWORK_DHCP_START='192.168.4.33'
 ISCSI_IP_PREFIX='192.168.4'
-NOVA_VOLUMES_DEV='/dev/sda6'
+NOVA_VOLUMES_DEV='/dev/sda7'
 SWIFT_DEV='/dev/sda7'
 
 # initialize
@@ -83,8 +83,8 @@ shell_env() {
     export OS_TENANT_NAME=admin
     export OS_USERNAME=admin
     export OS_PASSWORD=admin
-    export OS_AUTH_URL="http://localhost:5000/v2.0/"
-    export SERVICE_ENDPOINT=http://localhost:35357/v2.0
+    export OS_AUTH_URL="http://${KEYSTONE_IP}:5000/v2.0/"
+    export SERVICE_ENDPOINT=http://${KEYSTONE_IP}:35357/v2.0
 }
 # -----------------------------------------------------------------
 # Network Configuration
@@ -312,18 +312,18 @@ nova_setup() {
 --use_deprecated_auth=false
 --auth_strategy=keystone
 --scheduler_driver=nova.scheduler.simple.SimpleScheduler
---s3_host=${HOST_IP}
---ec2_host=${HOST_IP}
---rabbit_host=${HOST_IP}
---cc_host=${HOST_IP}
---nova_url=http://1${HOST_IP}:8774/v1.1/
---routing_source_ip=${HOST_IP}
---glance_api_servers=${HOST_IP}:9292
+--s3_host=${NOVA_IP}
+--ec2_host=${NOVA_IP}
+--rabbit_host=${NOVA_IP}
+--cc_host=${NOVA_IP}
+--nova_url=http://1${NOVA_IP}:8774/v1.1/
+--routing_source_ip=${NOVA_IP}
+--glance_api_servers=${GLANCE_IP}:9292
 --image_service=nova.image.glance.GlanceImageService
 --iscsi_ip_prefix=${ISCSI_IP_PREFIX}
---sql_connection=mysql://novadbadmin:novasecret@${HOST_IP}/nova
---ec2_url=http://${HOST_IP}:8773/services/Cloud
---keystone_ec2_url=http://${HOST_IP}:5000/v2.0/ec2tokens
+--sql_connection=mysql://novadbadmin:novasecret@${KEYSTONE_IP}/nova
+--ec2_url=http://${NOVA_IP}:8773/services/Cloud
+--keystone_ec2_url=http://${KEYSTONE_IP}:5000/v2.0/ec2tokens
 --api_paste_config=/etc/nova/api-paste.ini
 --libvirt_type=kvm
 --libvirt_use_virtio_for_bridges=true
@@ -331,9 +331,9 @@ nova_setup() {
 --resume_guests_state_on_host_boot=true
 # vnc specific configuration
 --novnc_enabled=true
---novncproxy_base_url=http://${HOST_IP}:6080/vnc_auto.html
---vncserver_proxyclient_address=${HOST_IP}
---vncserver_listen=${HOST_IP}
+--novncproxy_base_url=http://${NOVA_IP}:6080/vnc_auto.html
+--vncserver_proxyclient_address=${NOVA_IP}
+--vncserver_listen=${NOVA_IP}
 # network specific settings
 --network_manager=nova.network.manager.FlatDHCPManager
 --public_interface=eth0
@@ -361,7 +361,7 @@ EOF
     sudo sed -i -e 's/%SERVICE_PASSWORD%/nova/' /etc/nova/api-paste.ini
 
     # if not all in one
-    if [ "$1" = allinone ]; then
+    if [ "$1" != allinone ]; then
         sudo sed -i -e "s#service_host = 127.0.0.1#service_host = ${KEYSTONE_IP}#" /etc/nova/api-paste.ini
         sudo sed -i -e "s#auth_host = 127.0.0.1#auth_host = ${KEYSTONE_IP}#" /etc/nova/api-paste.ini
         sudo sed -i -e "s#auth_uri = http://127.0.0.1:5000#auth_uri = http://${KEYSTONE_IP}:5000#" /etc/nova/api-paste.ini
@@ -732,20 +732,25 @@ case "$1" in
         swift_setup
         ;;
     swift)
+        shell_env
         swift_setup
         ;;
     keystone)
+        shell_env
         database_setup
         keystone_setup
         ;;
     glance)
+        shell_env
         glance_setup
         ;;
     nova)
+        shell_env
         network_setup
         nova_setup
         ;;
     horizon)
+        shell_env
         horizon_setup
         ;;
     *)
