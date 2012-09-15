@@ -72,7 +72,7 @@ SWIFT_DEV='/dev/sda7'
 # -----------------------------------------------------------------
 # initialize
 # -----------------------------------------------------------------
-sudo apt-get update
+apt-get update
 
 # -----------------------------------------------------------------
 # Setup shell environment
@@ -100,7 +100,7 @@ shell_env() {
 # Network Configuration
 # -----------------------------------------------------------------
 network_setup() {
-    sudo apt-get -y install bridge-utils
+    apt-get -y install bridge-utils
 
     # Network Configuration
     cat <<EOF >/etc/network/interfaces
@@ -127,10 +127,10 @@ iface eth0:0 inet static
     network 192.168.3.0
     broadcast 192.168.3.255
 EOF
-    sudo /etc/init.d/networking restart 
+    /etc/init.d/networking restart 
 
     # NTP Server
-    sudo apt-get -y install ntp
+    apt-get -y install ntp
 
 cat <<EOF >/etc/ntp.conf
 server ntp.ubuntu.com
@@ -138,7 +138,7 @@ server 127.127.1.0
 fudge 127.127.1.0 stratum 10
 EOF
 
-    sudo service ntp restart
+    service ntp restart
 }
 
 # -----------------------------------------------------------------
@@ -147,38 +147,38 @@ EOF
 database_setup() {
     echo mysql-server-5.5 mysql-server/root_password password ${MYSQL_PASS} | debconf-set-selections
     echo mysql-server-5.5 mysql-server/root_password_again password ${MYSQL_PASS} | debconf-set-selections
-    sudo apt-get -y install mysql-server python-mysqldb
-    #sudo sed -i -e 's/bind-address       = 127.0.0.1/bind-address       = 0.0.0.0/' /etc/mysql/my.cnf
-    sudo sed -i -e 's/127.0.0.1/0.0.0.0/' /etc/mysql/my.cnf
-    sudo restart mysql
+    apt-get -y install mysql-server python-mysqldb
+    #sed -i -e 's/bind-address       = 127.0.0.1/bind-address       = 0.0.0.0/' /etc/mysql/my.cnf
+    sed -i -e 's/127.0.0.1/0.0.0.0/' /etc/mysql/my.cnf
+    restart mysql
 
     # Creating Databases
-    sudo mysql -uroot -p${MYSQL_PASS} -e 'CREATE DATABASE nova;'
-    sudo mysql -uroot -p${MYSQL_PASS} -e 'CREATE USER novadbadmin;'
-    sudo mysql -uroot -p${MYSQL_PASS} -e "GRANT ALL PRIVILEGES ON nova.* TO 'novadbadmin'@'%';"
-    sudo mysql -uroot -p${MYSQL_PASS} -e "SET PASSWORD FOR 'novadbadmin'@'%' = PASSWORD('novasecret');"
+    mysql -uroot -p${MYSQL_PASS} -e 'CREATE DATABASE nova;'
+    mysql -uroot -p${MYSQL_PASS} -e 'CREATE USER novadbadmin;'
+    mysql -uroot -p${MYSQL_PASS} -e "GRANT ALL PRIVILEGES ON nova.* TO 'novadbadmin'@'%';"
+    mysql -uroot -p${MYSQL_PASS} -e "SET PASSWORD FOR 'novadbadmin'@'%' = PASSWORD('novasecret');"
 
-    sudo mysql -uroot -p${MYSQL_PASS} -e 'CREATE DATABASE glance;'
-    sudo mysql -uroot -p${MYSQL_PASS} -e 'CREATE USER glancedbadmin;'
-    sudo mysql -uroot -p${MYSQL_PASS} -e "GRANT ALL PRIVILEGES ON glance.* TO 'glancedbadmin'@'%';"
-    sudo mysql -uroot -p${MYSQL_PASS} -e "SET PASSWORD FOR 'glancedbadmin'@'%' = PASSWORD('glancesecret');"
+    mysql -uroot -p${MYSQL_PASS} -e 'CREATE DATABASE glance;'
+    mysql -uroot -p${MYSQL_PASS} -e 'CREATE USER glancedbadmin;'
+    mysql -uroot -p${MYSQL_PASS} -e "GRANT ALL PRIVILEGES ON glance.* TO 'glancedbadmin'@'%';"
+    mysql -uroot -p${MYSQL_PASS} -e "SET PASSWORD FOR 'glancedbadmin'@'%' = PASSWORD('glancesecret');"
 
-    sudo mysql -uroot -p${MYSQL_PASS} -e 'CREATE DATABASE keystone;'
-    sudo mysql -uroot -p${MYSQL_PASS} -e 'CREATE USER keystonedbadmin;'
-    sudo mysql -uroot -p${MYSQL_PASS} -e "GRANT ALL PRIVILEGES ON keystone.* TO 'keystonedbadmin'@'%';"
-    sudo mysql -uroot -p${MYSQL_PASS} -e "SET PASSWORD FOR 'keystonedbadmin'@'%' = PASSWORD('keystonesecret');"
+    mysql -uroot -p${MYSQL_PASS} -e 'CREATE DATABASE keystone;'
+    mysql -uroot -p${MYSQL_PASS} -e 'CREATE USER keystonedbadmin;'
+    mysql -uroot -p${MYSQL_PASS} -e "GRANT ALL PRIVILEGES ON keystone.* TO 'keystonedbadmin'@'%';"
+    mysql -uroot -p${MYSQL_PASS} -e "SET PASSWORD FOR 'keystonedbadmin'@'%' = PASSWORD('keystonesecret');"
 }
 
 # -----------------------------------------------------------------
 # Keystone 
 # -----------------------------------------------------------------
 keystone_setup() {
-    sudo apt-get -y install keystone python-keystone python-keystoneclient
-    sudo sed -i -e 's/admin_token = ADMIN/admin_token = admin/' /etc/keystone/keystone.conf
-    sudo sed -i -e "s#sqlite:////var/lib/keystone/keystone.db#mysql://keystonedbadmin:keystonesecret@${KEYSTONE_IP}/keystone#" /etc/keystone/keystone.conf
+    apt-get -y install keystone python-keystone python-keystoneclient
+    sed -i -e 's/admin_token = ADMIN/admin_token = admin/' /etc/keystone/keystone.conf
+    sed -i -e "s#sqlite:////var/lib/keystone/keystone.db#mysql://keystonedbadmin:keystonesecret@${KEYSTONE_IP}/keystone#" /etc/keystone/keystone.conf
 
-    sudo service keystone restart
-    sudo keystone-manage db_sync
+    service keystone restart
+    keystone-manage db_sync
 
     # Creating Tenants
     keystone tenant-create --name admin
@@ -254,52 +254,52 @@ keystone_setup() {
 # Glance
 # -----------------------------------------------------------------
 glance_setup() {
-    #sudo apt-get -y install glance glance-api glance-client glance-common glance-registry python-glance
-    sudo apt-get -y install glance glance-api glance-client glance-common glance-registry python-glance python-mysqldb python-keystone python-keystoneclient mysql-client
+    #apt-get -y install glance glance-api glance-client glance-common glance-registry python-glance
+    apt-get -y install glance glance-api glance-client glance-common glance-registry python-glance python-mysqldb python-keystone python-keystoneclient mysql-client
 
     # Glance Configuration
-    sudo sed -i -e 's/%SERVICE_TENANT_NAME%/service/' /etc/glance/glance-api-paste.ini
-    sudo sed -i -e 's/%SERVICE_USER%/glance/' /etc/glance/glance-api-paste.ini
-    sudo sed -i -e 's/%SERVICE_PASSWORD%/glance/' /etc/glance/glance-api-paste.ini
+    sed -i -e 's/%SERVICE_TENANT_NAME%/service/' /etc/glance/glance-api-paste.ini
+    sed -i -e 's/%SERVICE_USER%/glance/' /etc/glance/glance-api-paste.ini
+    sed -i -e 's/%SERVICE_PASSWORD%/glance/' /etc/glance/glance-api-paste.ini
 
-    sudo sed -i -e 's/%SERVICE_TENANT_NAME%/service/' /etc/glance/glance-registry-paste.ini
-    sudo sed -i -e 's/%SERVICE_USER%/glance/' /etc/glance/glance-registry-paste.ini
-    sudo sed -i -e 's/%SERVICE_PASSWORD%/glance/' /etc/glance/glance-registry-paste.ini
+    sed -i -e 's/%SERVICE_TENANT_NAME%/service/' /etc/glance/glance-registry-paste.ini
+    sed -i -e 's/%SERVICE_USER%/glance/' /etc/glance/glance-registry-paste.ini
+    sed -i -e 's/%SERVICE_PASSWORD%/glance/' /etc/glance/glance-registry-paste.ini
 
-    sudo sed -i -e "s#sqlite:////var/lib/glance/glance.sqlite#mysql://glancedbadmin:glancesecret@${DB_IP}/glance#" /etc/glance/glance-registry.conf
-    sudo cat <<EOF >>/etc/glance/glance-api.conf
+    sed -i -e "s#sqlite:////var/lib/glance/glance.sqlite#mysql://glancedbadmin:glancesecret@${DB_IP}/glance#" /etc/glance/glance-registry.conf
+    cat <<EOF >>/etc/glance/glance-api.conf
 [paste_deploy]
 flavor = keystone
 EOF
 
-    sudo sed -i -e "s#sqlite:////var/lib/glance/glance.sqlite#mysql://glancedbadmin:glancesecret@${HOST_IP}/glance#" /etc/glance/glance-registry.conf
-    sudo cat <<EOF >>/etc/glance/glance-registry.conf
+    sed -i -e "s#sqlite:////var/lib/glance/glance.sqlite#mysql://glancedbadmin:glancesecret@${HOST_IP}/glance#" /etc/glance/glance-registry.conf
+    cat <<EOF >>/etc/glance/glance-registry.conf
 [paste_deploy]
 flavor = keystone
 EOF
 
     # if not all in one
     if [ "$1" != allinone ]; then
-        sudo sed -i -e 's#pipeline = versionnegotiation context apiv1app#pipeline = versionnegotiation context apiv1app authtoken auth-context#' /etc/glance/glance-api-paste.ini
-        sudo sed -i -e "s#service_host = 127.0.0.1#service_host = ${KEYSTONE_IP}#" /etc/glance/glance-api-paste.ini
-        sudo sed -i -e "s#auth_host = 127.0.0.1#auth_host = ${KEYSTONE_IP}#" /etc/glance/glance-api-paste.ini
-        sudo sed -i -e "s#auth_uri = http://127.0.0.1:5000/#auth_uri = http://${KEYSTONE_IP}:5000/#" /etc/glance/glance-api-paste.ini
-        sudo sed -i -e "s#pipeline = context registryapp#pipeline = context registryapp authtoken auth-context#" /etc/glance/glance-registry-paste.ini
-        sudo sed -i -e "s#service_host = 127.0.0.1#service_host = ${KEYSTONE_IP}#" /etc/glance/glance-registry-paste.ini
-        sudo sed -i -e "s#auth_host = 127.0.0.1#auth_host = ${KEYSTONE_IP}#" /etc/glance/glance-registry-paste.ini
-        sudo sed -i -e "s#auth_uri = http://127.0.0.1:5000/#auth_uri = http://${KEYSTONE_IP}:5000/#" /etc/glance/glance-registry-paste.ini
+        sed -i -e 's#pipeline = versionnegotiation context apiv1app#pipeline = versionnegotiation context apiv1app authtoken auth-context#' /etc/glance/glance-api-paste.ini
+        sed -i -e "s#service_host = 127.0.0.1#service_host = ${KEYSTONE_IP}#" /etc/glance/glance-api-paste.ini
+        sed -i -e "s#auth_host = 127.0.0.1#auth_host = ${KEYSTONE_IP}#" /etc/glance/glance-api-paste.ini
+        sed -i -e "s#auth_uri = http://127.0.0.1:5000/#auth_uri = http://${KEYSTONE_IP}:5000/#" /etc/glance/glance-api-paste.ini
+        sed -i -e "s#pipeline = context registryapp#pipeline = context registryapp authtoken auth-context#" /etc/glance/glance-registry-paste.ini
+        sed -i -e "s#service_host = 127.0.0.1#service_host = ${KEYSTONE_IP}#" /etc/glance/glance-registry-paste.ini
+        sed -i -e "s#auth_host = 127.0.0.1#auth_host = ${KEYSTONE_IP}#" /etc/glance/glance-registry-paste.ini
+        sed -i -e "s#auth_uri = http://127.0.0.1:5000/#auth_uri = http://${KEYSTONE_IP}:5000/#" /etc/glance/glance-registry-paste.ini
     fi
 
 
-    sudo glance-manage version_control 0
-    sudo glance-manage db_sync
+    glance-manage version_control 0
+    glance-manage db_sync
 
     #mysql -uroot -p${MYSQL_PASS} -e "GRANT ALL PRIVILEGES ON glance.* TO 'glancedbadmin'@'${DB_IP};"
     #mysql -uroot -p${MYSQL_PASS} -e "SET PASSWORD FOR 'glancedbadmin'@'${DB_IP}' = PASSWORD('glancesecret');"
-    #sudo glance-manage db_sync
+    #glance-manage db_sync
 
-    sudo restart glance-api
-    sudo restart glance-registry
+    restart glance-api
+    restart glance-registry
 
     #glance index
 }
@@ -308,10 +308,10 @@ EOF
 # Nova
 # -----------------------------------------------------------------
 nova_setup() {
-    sudo apt-get -y  install nova-api nova-cert nova-compute nova-compute-kvm nova-doc nova-network nova-objectstore nova-scheduler nova-volume rabbitmq-server novnc nova-consoleauth python-keystone python-keystoneclient
+    apt-get -y  install nova-api nova-cert nova-compute nova-compute-kvm nova-doc nova-network nova-objectstore nova-scheduler nova-volume rabbitmq-server novnc nova-consoleauth python-keystone python-keystoneclient
 
     # Nova Configuration
-    sudo cp /etc/nova/nova.conf  /etc/nova/nova.conf.org
+    cp /etc/nova/nova.conf  /etc/nova/nova.conf.org
     cat << EOF > /etc/nova/nova.conf
 --dhcpbridge_flagfile=/etc/nova/nova.conf
 --dhcpbridge=/usr/bin/nova-dhcpbridge
@@ -357,46 +357,46 @@ nova_setup() {
 --force_dhcp_release
 --iscsi_helper=tgtadm
 --connection_type=libvirt
---root_helper=sudo nova-rootwrap
+--root_helper=nova-rootwrap
 --verbose
 EOF
 
-    sudo pvcreate ${NOVA_VOLUMES_DEV}
-    sudo vgcreate nova-volumes ${NOVA_VOLUMES_DEV}
-    sudo chown -R nova:nova /etc/nova
-    sudo chmod 644 /etc/nova/nova.conf
+    pvcreate ${NOVA_VOLUMES_DEV}
+    vgcreate nova-volumes ${NOVA_VOLUMES_DEV}
+    chown -R nova:nova /etc/nova
+    chmod 644 /etc/nova/nova.conf
 
-    sudo sed -i -e 's/%SERVICE_TENANT_NAME%/service/' /etc/nova/api-paste.ini
-    sudo sed -i -e 's/%SERVICE_USER%/nova/' /etc/nova/api-paste.ini
-    sudo sed -i -e 's/%SERVICE_PASSWORD%/nova/' /etc/nova/api-paste.ini
+    sed -i -e 's/%SERVICE_TENANT_NAME%/service/' /etc/nova/api-paste.ini
+    sed -i -e 's/%SERVICE_USER%/nova/' /etc/nova/api-paste.ini
+    sed -i -e 's/%SERVICE_PASSWORD%/nova/' /etc/nova/api-paste.ini
 
     # if not all in one
     if [ "$1" != allinone ]; then
-        sudo sed -i -e "s#service_host = 127.0.0.1#service_host = ${KEYSTONE_IP}#" /etc/nova/api-paste.ini
-        sudo sed -i -e "s#auth_host = 127.0.0.1#auth_host = ${KEYSTONE_IP}#" /etc/nova/api-paste.ini
-        sudo sed -i -e "s#auth_uri = http://127.0.0.1:5000#auth_uri = http://${KEYSTONE_IP}:5000#" /etc/nova/api-paste.ini
+        sed -i -e "s#service_host = 127.0.0.1#service_host = ${KEYSTONE_IP}#" /etc/nova/api-paste.ini
+        sed -i -e "s#auth_host = 127.0.0.1#auth_host = ${KEYSTONE_IP}#" /etc/nova/api-paste.ini
+        sed -i -e "s#auth_uri = http://127.0.0.1:5000#auth_uri = http://${KEYSTONE_IP}:5000#" /etc/nova/api-paste.ini
     fi
 
-    sudo nova-manage db sync
+    nova-manage db sync
 
-    sudo nova-manage network create private --fixed_range_v4=${FIXED_RANGE} --num_networks=1 --bridge=br100 --bridge_interface=eth0:0 --network_size=32
+    nova-manage network create private --fixed_range_v4=${FIXED_RANGE} --num_networks=1 --bridge=br100 --bridge_interface=eth0:0 --network_size=32
 
-    sudo restart libvirt-bin;sudo restart nova-network; sudo restart nova-compute; sudo restart nova-api; sudo restart nova-objectstore; sudo restart nova-scheduler; sudo service nova-volume restart; sudo restart nova-consoleauth;
+    restart libvirt-bin;restart nova-network; restart nova-compute; restart nova-api; restart nova-objectstore; restart nova-scheduler; service nova-volume restart; restart nova-consoleauth;
 
-    sudo nova-manage service list
+    nova-manage service list
 }
 
 # -----------------------------------------------------------------
 # Horizon
 # -----------------------------------------------------------------
 horizon_setup() {
-    sudo apt-get -y install openstack-dashboard
-    sudo service apache2 restart
+    apt-get -y install openstack-dashboard
+    service apache2 restart
 
     # if you do not install all in one.
     if [ "$1" = allinone ]; then
-        sudo sed -i -e "s#OPENSTACK_HOST = \"127.0.0.1\"#OPENSTACK_HOST = \"${KEYSTONE_IP}\"#" /etc/openstack-dashboard/local_settings.py
-        sudo service apache2 restart
+        sed -i -e "s#OPENSTACK_HOST = \"127.0.0.1\"#OPENSTACK_HOST = \"${KEYSTONE_IP}\"#" /etc/openstack-dashboard/local_settings.py
+        service apache2 restart
     fi
 }
 
@@ -404,30 +404,30 @@ horizon_setup() {
 # Swift
 # -----------------------------------------------------------------
 swift_setup() {
-    sudo apt-get -y install swift swift-proxy swift-account swift-container swift-object
-    sudo apt-get -y install xfsprogs curl python-pastedeploy
+    apt-get -y install swift swift-proxy swift-account swift-container swift-object
+    apt-get -y install xfsprogs curl python-pastedeploy
 
-    sudo fdisk -l
-    sudo mkfs.xfs -i size=1024 ${SWIFT_DEV} -f
+    fdisk -l
+    mkfs.xfs -i size=1024 ${SWIFT_DEV} -f
 
-    sudo mkdir /mnt/swift_backend
+    mkdir /mnt/swift_backend
 
-    sudo cat <<EOF >>/etc/fstab
+    cat <<EOF >>/etc/fstab
 ${SWIFT_DEV} /mnt/swift_backend xfs noatime,nodiratime,nobarrier,logbufs=8 0 0
 EOF
 
-    sudo mount /mnt/swift_backend
+    mount /mnt/swift_backend
     cd /mnt/swift_backend
-    sudo mkdir node1 node2 node3 node4
+    mkdir node1 node2 node3 node4
 
-    sudo chown swift.swift /mnt/swift_backend/*
+    chown swift.swift /mnt/swift_backend/*
 
-    for i in {1..4}; do sudo ln -s /mnt/swift_backend/node$i /srv/node$i; done;
+    for i in {1..4}; do ln -s /mnt/swift_backend/node$i /srv/node$i; done;
 
-    sudo mkdir -p /etc/swift/account-server /etc/swift/container-server /etc/swift/object-server /srv/node1/device /srv/node2/device /srv/node3/device /srv/node4/device
-    sudo mkdir /run/swift
-    sudo chown -L -R swift.swift /etc/swift /srv/node[1-4]/ /run/swift
-    sudo cat <<EOF >/etc/rc.local
+    mkdir -p /etc/swift/account-server /etc/swift/container-server /etc/swift/object-server /srv/node1/device /srv/node2/device /srv/node3/device /srv/node4/device
+    mkdir /run/swift
+    chown -L -R swift.swift /etc/swift /srv/node[1-4]/ /run/swift
+    cat <<EOF >/etc/rc.local
 #!/bin/sh -e
 #
 # rc.local
@@ -441,25 +441,25 @@ EOF
 #
 # By default this script does nothing.
 
-sudo mkdir /run/swift
-sudo chown swift.swift /run/swift
+mkdir /run/swift
+chown swift.swift /run/swift
 
 exit 0
 EOF
 
     # Configure Rsync
-    sudo sed -i -e 's/RSYNC_ENABLE=false/RSYNC_ENABLE=true/' /etc/default/rsync
+    sed -i -e 's/RSYNC_ENABLE=false/RSYNC_ENABLE=true/' /etc/default/rsync
 
-    sudo service rsync restart
+    service rsync restart
 
     # Configure Swift Components
     SWIFT_HASH_PATH_SUFFIX=`od -t x8 -N 8 -A n < /dev/random`
-    sudo cat << EOF > /etc/swift/swift.conf
+    cat << EOF > /etc/swift/swift.conf
 [swift-hash]
 swift_hash_path_suffix = ${SWIFT_HASH_PATH_SUFFIX}
 EOF
 
-    sudo cat <<EOF >/etc/swift/paste.deploy
+    cat <<EOF >/etc/swift/paste.deploy
 [DEFAULT]
 name1 = globalvalue
 name2 = globalvalue
@@ -476,7 +476,7 @@ name6 = localvalue
 EOF
 
     # Configure Swift Proxy Server
-    sudo cat <<EOF >/etc/swift/proxy-server.conf
+    cat <<EOF >/etc/swift/proxy-server.conf
 [DEFAULT]
 bind_port = 8080
 user = swift
@@ -531,7 +531,7 @@ is_admin = true
 EOF
 
     # Configure Swift Account Server
-    sudo cat <<EOF >/etc/swift/account-server.conf
+    cat <<EOF >/etc/swift/account-server.conf
 [DEFAULT]
 bind_ip = 0.0.0.0
 workers = 2
@@ -549,7 +549,7 @@ use = egg:swift#account
 [account-reaper]
 EOF
 
-    sudo cat <<EOF >/etc/swift/account-server/1.conf
+    cat <<EOF >/etc/swift/account-server/1.conf
 [DEFAULT]
 devices = /srv/node1
 mount_check = false
@@ -571,17 +571,17 @@ vm_test_mode = no
 [account-reaper]
 EOF
 
-    sudo cp /etc/swift/account-server/1.conf /etc/swift/account-server/2.conf
-    sudo cp /etc/swift/account-server/1.conf /etc/swift/account-server/3.conf
-    sudo cp /etc/swift/account-server/1.conf /etc/swift/account-server/4.conf
+    cp /etc/swift/account-server/1.conf /etc/swift/account-server/2.conf
+    cp /etc/swift/account-server/1.conf /etc/swift/account-server/3.conf
+    cp /etc/swift/account-server/1.conf /etc/swift/account-server/4.conf
 
-    sudo sed -i 's/6012/6022/g;s/LOCAL2/LOCAL3/g;s/node1/node2/g' /etc/swift/account-server/2.conf
-    sudo sed -i 's/6012/6032/g;s/LOCAL2/LOCAL4/g;s/node1/node3/g' /etc/swift/account-server/3.conf
-    sudo sed -i 's/6012/6042/g;s/LOCAL2/LOCAL5/g;s/node1/node4/g' /etc/swift/account-server/4.conf
+    sed -i 's/6012/6022/g;s/LOCAL2/LOCAL3/g;s/node1/node2/g' /etc/swift/account-server/2.conf
+    sed -i 's/6012/6032/g;s/LOCAL2/LOCAL4/g;s/node1/node3/g' /etc/swift/account-server/3.conf
+    sed -i 's/6012/6042/g;s/LOCAL2/LOCAL5/g;s/node1/node4/g' /etc/swift/account-server/4.conf
 
     # Configure Swift Container Server
-    # sudo vi /etc/swift/container-server.conf
-    sudo cat <<EOF >/etc/swift/container-server.conf
+    # vi /etc/swift/container-server.conf
+    cat <<EOF >/etc/swift/container-server.conf
 [DEFAULT]
 bind_ip = 0.0.0.0
 workers = 2
@@ -601,7 +601,7 @@ use = egg:swift#container
 [container-sync]
 EOF
 
-    sudo cat <<EOF >/etc/swift/container-server/1.conf
+    cat <<EOF >/etc/swift/container-server/1.conf
 [DEFAULT]
 devices = /srv/node1
 mount_check = false
@@ -625,15 +625,15 @@ vm_test_mode = no
 [container-sync]
 EOF
 
-    sudo cp /etc/swift/container-server/1.conf /etc/swift/container-server/2.conf
-    sudo cp /etc/swift/container-server/1.conf /etc/swift/container-server/3.conf
-    sudo cp /etc/swift/container-server/1.conf /etc/swift/container-server/4.conf
-    sudo sed -i 's/6011/6021/g;s/LOCAL2/LOCAL3/g;s/node1/node2/g' /etc/swift/container-server/2.conf
-    sudo sed -i 's/6011/6031/g;s/LOCAL2/LOCAL4/g;s/node1/node3/g' /etc/swift/container-server/3.conf
-    sudo sed -i 's/6011/6041/g;s/LOCAL2/LOCAL5/g;s/node1/node4/g' /etc/swift/container-server/4.conf
+    cp /etc/swift/container-server/1.conf /etc/swift/container-server/2.conf
+    cp /etc/swift/container-server/1.conf /etc/swift/container-server/3.conf
+    cp /etc/swift/container-server/1.conf /etc/swift/container-server/4.conf
+    sed -i 's/6011/6021/g;s/LOCAL2/LOCAL3/g;s/node1/node2/g' /etc/swift/container-server/2.conf
+    sed -i 's/6011/6031/g;s/LOCAL2/LOCAL4/g;s/node1/node3/g' /etc/swift/container-server/3.conf
+    sed -i 's/6011/6041/g;s/LOCAL2/LOCAL5/g;s/node1/node4/g' /etc/swift/container-server/4.conf
 
     # Configure Swift Object Server
-    sudo cat <<EOF >/etc/swift/object-server.conf
+    cat <<EOF >/etc/swift/object-server.conf
 [DEFAULT]
 bind_ip = 0.0.0.0
 workers = 2
@@ -651,7 +651,7 @@ use = egg:swift#object
 [object-auditor]
 EOF
 
-    sudo cat <<EOF >/etc/swift/object-server/1.conf
+    cat <<EOF >/etc/swift/object-server/1.conf
 [DEFAULT]
 devices = /srv/node1
 mount_check = false
@@ -673,40 +673,40 @@ vm_test_mode = no
 [object-auditor]
 EOF
 
-    sudo cp /etc/swift/object-server/1.conf  /etc/swift/object-server/2.conf
-    sudo cp /etc/swift/object-server/1.conf  /etc/swift/object-server/3.conf
-    sudo cp /etc/swift/object-server/1.conf  /etc/swift/object-server/4.conf
-    sudo sed -i 's/6010/6020/g;s/LOCAL2/LOCAL3/g;s/node1/node2/g' /etc/swift/object-server/2.conf
-    sudo sed -i 's/6010/6030/g;s/LOCAL2/LOCAL4/g;s/node1/node3/g' /etc/swift/object-server/3.conf
-    sudo sed -i 's/6010/6040/g;s/LOCAL2/LOCAL5/g;s/node1/node4/g' /etc/swift/object-server/4.conf
+    cp /etc/swift/object-server/1.conf  /etc/swift/object-server/2.conf
+    cp /etc/swift/object-server/1.conf  /etc/swift/object-server/3.conf
+    cp /etc/swift/object-server/1.conf  /etc/swift/object-server/4.conf
+    sed -i 's/6010/6020/g;s/LOCAL2/LOCAL3/g;s/node1/node2/g' /etc/swift/object-server/2.conf
+    sed -i 's/6010/6030/g;s/LOCAL2/LOCAL4/g;s/node1/node3/g' /etc/swift/object-server/3.conf
+    sed -i 's/6010/6040/g;s/LOCAL2/LOCAL5/g;s/node1/node4/g' /etc/swift/object-server/4.conf
 
     # Configure Swift Rings
     cd /etc/swift
-    sudo swift-ring-builder object.builder create 18 3 1
-    sudo swift-ring-builder container.builder create 18 3 1
-    sudo swift-ring-builder account.builder create 18 3 1
-    sudo swift-ring-builder object.builder add z1-127.0.0.1:6010/device 1
-    sudo swift-ring-builder object.builder add z2-127.0.0.1:6020/device 1
-    sudo swift-ring-builder object.builder add z3-127.0.0.1:6030/device 1
-    sudo swift-ring-builder object.builder add z4-127.0.0.1:6040/device 1
-    sudo swift-ring-builder object.builder rebalance
-    sudo swift-ring-builder container.builder add z1-127.0.0.1:6011/device 1
-    sudo swift-ring-builder container.builder add z2-127.0.0.1:6021/device 1
-    sudo swift-ring-builder container.builder add z3-127.0.0.1:6031/device 1
-    sudo swift-ring-builder container.builder add z4-127.0.0.1:6041/device 1
-    sudo swift-ring-builder container.builder rebalance
-    sudo swift-ring-builder account.builder add z1-127.0.0.1:6012/device 1
-    sudo swift-ring-builder account.builder add z2-127.0.0.1:6022/device 1
-    sudo swift-ring-builder account.builder add z3-127.0.0.1:6032/device 1
-    sudo swift-ring-builder account.builder add z4-127.0.0.1:6042/device 1
-    sudo swift-ring-builder account.builder rebalance
+    swift-ring-builder object.builder create 18 3 1
+    swift-ring-builder container.builder create 18 3 1
+    swift-ring-builder account.builder create 18 3 1
+    swift-ring-builder object.builder add z1-127.0.0.1:6010/device 1
+    swift-ring-builder object.builder add z2-127.0.0.1:6020/device 1
+    swift-ring-builder object.builder add z3-127.0.0.1:6030/device 1
+    swift-ring-builder object.builder add z4-127.0.0.1:6040/device 1
+    swift-ring-builder object.builder rebalance
+    swift-ring-builder container.builder add z1-127.0.0.1:6011/device 1
+    swift-ring-builder container.builder add z2-127.0.0.1:6021/device 1
+    swift-ring-builder container.builder add z3-127.0.0.1:6031/device 1
+    swift-ring-builder container.builder add z4-127.0.0.1:6041/device 1
+    swift-ring-builder container.builder rebalance
+    swift-ring-builder account.builder add z1-127.0.0.1:6012/device 1
+    swift-ring-builder account.builder add z2-127.0.0.1:6022/device 1
+    swift-ring-builder account.builder add z3-127.0.0.1:6032/device 1
+    swift-ring-builder account.builder add z4-127.0.0.1:6042/device 1
+    swift-ring-builder account.builder rebalance
 
     # Starting Swift services
-    sudo swift-init main start
-    sudo swift-init rest start
+    swift-init main start
+    swift-init rest start
 
     # Testing Swift
-    sudo chown -R swift.swift /etc/swift
+    chown -R swift.swift /etc/swift
     swift -v -V 2.0 -A http://127.0.0.1:5000/v2.0/ -U service:swift -K swift stat
 }
 
