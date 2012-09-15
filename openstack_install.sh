@@ -379,7 +379,7 @@ EOF
 
     sudo nova-manage db sync
 
-    sudo nova-manage network create private --fixed_range_v4=192.168.4.32/27 --num_networks=1 --bridge=br100 --bridge_interface=eth0:0 --network_size=32
+    sudo nova-manage network create private --fixed_range_v4=${FIXED_RANGE} --num_networks=1 --bridge=br100 --bridge_interface=eth0:0 --network_size=32
 
     sudo restart libvirt-bin;sudo restart nova-network; sudo restart nova-compute; sudo restart nova-api; sudo restart nova-objectstore; sudo restart nova-scheduler; sudo service nova-volume restart; sudo restart nova-consoleauth;
 
