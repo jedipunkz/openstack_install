@@ -357,7 +357,7 @@ nova_setup() {
 --force_dhcp_release
 --iscsi_helper=tgtadm
 --connection_type=libvirt
---root_helper=nova-rootwrap
+--root_helper=sudo nova-rootwrap
 --verbose
 EOF
 
