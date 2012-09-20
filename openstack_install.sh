@@ -326,7 +326,7 @@ nova_setup() {
 --ec2_host=${NOVA_IP}
 --rabbit_host=${NOVA_IP}
 --cc_host=${NOVA_IP}
---nova_url=http://1${NOVA_IP}:8774/v1.1/
+--nova_url=http://${NOVA_IP}:8774/v1.1/
 --routing_source_ip=${NOVA_IP}
 --glance_api_servers=${GLANCE_IP}:9292
 --image_service=nova.image.glance.GlanceImageService
