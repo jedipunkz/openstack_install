@@ -47,6 +47,10 @@ set -ex
 # -----------------------------------------------------------------
 HOST_IP='10.200.4.139'
 # -----------------------------------------------------------------
+# if you want to install additinal nova, setup this env and use nova_add
+# -----------------------------------------------------------------
+NOVAORIGIN_IP='10.200.4.139'
+# -----------------------------------------------------------------
 # if you install on separated nodes, set this env.
 # -----------------------------------------------------------------
 NOVA_IP='10.200.4.124'
@@ -382,6 +386,84 @@ EOF
     nova-manage network create private --fixed_range_v4=${FIXED_RANGE} --num_networks=1 --bridge=br100 --bridge_interface=eth0:0 --network_size=32
 
     restart libvirt-bin;restart nova-network; restart nova-compute; restart nova-api; restart nova-objectstore; restart nova-scheduler; service nova-volume restart; restart nova-consoleauth;
+
+    nova-manage service list
+}
+
+# -----------------------------------------------------------------
+# Nova (additinal)
+# -----------------------------------------------------------------
+nova_add_setup() {
+    apt-get -y install nova-compute nova-compute-kvm nova-doc python-keystone python-keystoneclient bridge-utils nova-network
+
+    # Nova Configuration
+    cp /etc/nova/nova.conf  /etc/nova/nova.conf.org
+    cat << EOF > /etc/nova/nova.conf
+--dhcpbridge_flagfile=/etc/nova/nova.conf
+--dhcpbridge=/usr/bin/nova-dhcpbridge
+--logdir=/var/log/nova
+--state_path=/var/lib/nova
+--lock_path=/run/lock/nova
+--allow_admin_api=true
+--use_deprecated_auth=false
+--auth_strategy=keystone
+--scheduler_driver=nova.scheduler.simple.SimpleScheduler
+--s3_host=${NOVAORIGIN_IP}
+--ec2_host=${NOVAORIGIN_IP}
+--rabbit_host=${NOVAORIGIN_IP}
+--cc_host=${NOVAORIGIN_IP}
+--nova_url=http://${NOVAORIGIN_IP}:8774/v1.1/
+--routing_source_ip=${NOVAORIGIN_IP}
+--glance_api_servers=${GLANCE_IP}:9292
+--image_service=nova.image.glance.GlanceImageService
+--iscsi_ip_prefix=${ISCSI_IP_PREFIX}
+--sql_connection=mysql://novadbadmin:novasecret@${KEYSTONE_IP}/nova
+--ec2_url=http://${NOVAORIGIN_IP}:8773/services/Cloud
+--keystone_ec2_url=http://${KEYSTONE_IP}:5000/v2.0/ec2tokens
+--api_paste_config=/etc/nova/api-paste.ini
+--libvirt_type=kvm
+--libvirt_use_virtio_for_bridges=true
+--start_guests_on_host_boot=true
+--resume_guests_state_on_host_boot=true
+# vnc specific configuration
+--novnc_enabled=true
+--novncproxy_base_url=http://${NOVAORIGIN_IP}:6080/vnc_auto.html
+--vncserver_proxyclient_address=${NOVA_IP}
+--vncserver_listen=${NOVA_IP}
+# network specific settings
+--network_manager=nova.network.manager.FlatDHCPManager
+--public_interface=eth0
+--flat_interface=eth2
+--flat_network_bridge=br100
+--fixed_range=${FIXED_RANGE}
+--floating_range=${FLOATING_RANGE}
+--network_size=32
+--flat_network_dhcp_start=${FLAT_NETWORK_DHCP_START}
+--flat_injected=False
+--force_dhcp_release
+--iscsi_helper=tgtadm
+--connection_type=libvirt
+--root_helper=sudo nova-rootwrap
+--verbose
+EOF
+
+    #pvcreate ${NOVA_VOLUMES_DEV}
+    #vgcreate nova-volumes ${NOVA_VOLUMES_DEV}
+    chown -R nova:nova /etc/nova
+    chmod 644 /etc/nova/nova.conf
+
+    sed -i -e 's/%SERVICE_TENANT_NAME%/service/' /etc/nova/api-paste.ini
+    sed -i -e 's/%SERVICE_USER%/nova/' /etc/nova/api-paste.ini
+    sed -i -e 's/%SERVICE_PASSWORD%/nova/' /etc/nova/api-paste.ini
+
+    # if not all in one
+    if [ "$1" != allinone ]; then
+        sed -i -e "s#service_host = 127.0.0.1#service_host = ${KEYSTONE_IP}#" /etc/nova/api-paste.ini
+        sed -i -e "s#auth_host = 127.0.0.1#auth_host = ${KEYSTONE_IP}#" /etc/nova/api-paste.ini
+        sed -i -e "s#auth_uri = http://127.0.0.1:5000#auth_uri = http://${KEYSTONE_IP}:5000#" /etc/nova/api-paste.ini
+    fi
+
+    restart libvirt-bin;restart nova-compute;
 
     nova-manage service list
 }
@@ -759,12 +841,15 @@ case "$1" in
         network_setup
         nova_setup
         ;;
+    nova_add)
+        shell_env
+        nova_add_setup
     horizon)
         shell_env
         horizon_setup
         ;;
     *)
-        echo $"Usage : $0 {allinone|swift|keystone|glance|nova|horizon}"
+        echo $"Usage : $0 {allinone|swift|keystone|glance|nova|horizon|nova_add}"
         exit 1
         ;;
 esac
