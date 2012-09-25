@@ -844,6 +844,7 @@ case "$1" in
     nova_add)
         shell_env
         nova_add_setup
+        ;;
     horizon)
         shell_env
         horizon_setup
