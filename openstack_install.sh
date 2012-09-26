@@ -379,11 +379,18 @@ EOF
         sed -i -e "s#service_host = 127.0.0.1#service_host = ${KEYSTONE_IP}#" /etc/nova/api-paste.ini
         sed -i -e "s#auth_host = 127.0.0.1#auth_host = ${KEYSTONE_IP}#" /etc/nova/api-paste.ini
         sed -i -e "s#auth_uri = http://127.0.0.1:5000#auth_uri = http://${KEYSTONE_IP}:5000#" /etc/nova/api-paste.ini
+        echo "--multi_host=True" >> /etc/nova/nova.conf
+    else
+        echo "--routing_source_ip=${NOVAORIGIN_IP}" >> /etc/nova/nova.conf
     fi
 
     nova-manage db sync
 
-    nova-manage network create private --fixed_range_v4=${FIXED_RANGE} --num_networks=1 --bridge=br100 --bridge_interface=eth0:0 --network_size=32
+    if [ "$1" != allinone ]; then
+        nova-manage network create private --multi_host=T --fixed_range_v4=${FIXED_RANGE} --num_networks=1 --bridge=br100 --bridge_interface=eth0:0 --network_size=32
+    else
+        nova-manage network create private --fixed_range_v4=${FIXED_RANGE} --num_networks=1 --bridge=br100 --bridge_interface=eth0:0 --network_size=32
+    fi
 
     restart libvirt-bin;restart nova-network; restart nova-compute; restart nova-api; restart nova-objectstore; restart nova-scheduler; service nova-volume restart; restart nova-consoleauth;
 
@@ -394,8 +401,8 @@ EOF
 # Nova (additinal)
 # -----------------------------------------------------------------
 nova_add_setup() {
-    apt-get -y install nova-compute nova-compute-kvm nova-doc python-keystone python-keystoneclient bridge-utils nova-network
-
+    apt-get -y install nova-compute nova-compute-kvm nova-doc python-keystone python-keystoneclient bridge-utils nova-network rabbitmq-server
+ 
     # Nova Configuration
     cp /etc/nova/nova.conf  /etc/nova/nova.conf.org
     cat << EOF > /etc/nova/nova.conf
@@ -413,7 +420,6 @@ nova_add_setup() {
 --rabbit_host=${NOVAORIGIN_IP}
 --cc_host=${NOVAORIGIN_IP}
 --nova_url=http://${NOVAORIGIN_IP}:8774/v1.1/
---routing_source_ip=${NOVAORIGIN_IP}
 --glance_api_servers=${GLANCE_IP}:9292
 --image_service=nova.image.glance.GlanceImageService
 --iscsi_ip_prefix=${ISCSI_IP_PREFIX}
@@ -461,6 +467,9 @@ EOF
         sed -i -e "s#service_host = 127.0.0.1#service_host = ${KEYSTONE_IP}#" /etc/nova/api-paste.ini
         sed -i -e "s#auth_host = 127.0.0.1#auth_host = ${KEYSTONE_IP}#" /etc/nova/api-paste.ini
         sed -i -e "s#auth_uri = http://127.0.0.1:5000#auth_uri = http://${KEYSTONE_IP}:5000#" /etc/nova/api-paste.ini
+        echo "--multi_host=True" >> /etc/nova/nova.conf
+    else
+        echo "--routing_source_ip=${NOVAORIGIN_IP}" >> /etc/nova.conf
     fi
 
     restart libvirt-bin;restart nova-compute;
