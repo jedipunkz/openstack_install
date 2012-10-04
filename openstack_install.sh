@@ -249,7 +249,7 @@ keystone_setup() {
     keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_COMPUTE --publicurl "http://${NOVA_IP}:8774/v2/\$(tenant_id)s" --adminurl "http://${NOVA_IP}:8774/v2/\$(tenant_id)s" --internalurl "http://${NOVA_IP}:8774/v2/\$(tenant_id)s"
     keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_VOLUME --publicurl "http://${NOVA_IP}:8776/v1/\$(tenant_id)s" --adminurl "http://${NOVA_IP}:8776/v1/\$(tenant_id)s" --internalurl "http://${NOVA_IP}:8776/v1/\$(tenant_id)s"
     keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_IMAGE --publicurl "http://${GLANCE_IP}:9292/v1" --adminurl "http://${GLANCE_IP}:9292/v1" --internalurl "http://${GLANCE_IP}:9292/v1"
-    keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_OBJECT_STORE --publicurl "http://${SWIFT_IP}:8089/v1/AUTH_\$(tenant_id)s" --adminurl "http://${SWIFT_IP}:8089/v1" --internalurl "http://${SWIFT_IP}:8089/v1/AUTH_\$(tenant_id)s"
+    keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_OBJECT_STORE --publicurl "http://${SWIFT_IP}:8080/v1/AUTH_\$(tenant_id)s" --adminurl "http://${SWIFT_IP}:8080/v1" --internalurl "http://${SWIFT_IP}:8080/v1/AUTH_\$(tenant_id)s"
     keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_IDENTITY --publicurl "http://${KEYSTONE_IP}:5000/v2.0" --adminurl "http://${KEYSTONE_IP}:35357/v2.0" --internalurl "http://${KEYSTONE_IP}:5000/v2.0"
     keystone endpoint-create --region myregion --service_id $SERVICE_LIST_ID_EC2 --publicurl "http://${NOVA_IP}:8773/services/Cloud" --adminurl "http://${NOVA_IP}:8773/services/Admin" --internalurl "http://${NOVA_IP}:8773/services/Cloud"
 }
@@ -513,7 +513,10 @@ EOF
 
     chown swift.swift /mnt/swift_backend/*
 
-    for i in {1..4}; do ln -s /mnt/swift_backend/node$i /srv/node$i; done;
+    ln -s /mnt/swift_backend/node1 /srv/node1
+    ln -s /mnt/swift_backend/node2 /srv/node2
+    ln -s /mnt/swift_backend/node3 /srv/node3
+    ln -s /mnt/swift_backend/node4 /srv/node4
 
     mkdir -p /etc/swift/account-server /etc/swift/container-server /etc/swift/object-server /srv/node1/device /srv/node2/device /srv/node3/device /srv/node4/device
     mkdir /run/swift
